@@ -69,8 +69,8 @@ const AuthWebView: React.FC<AuthWebViewProps> = ({
           
           if (sessionCheck.isValid) {
             console.log('✅ AuthWebView: Sesión verificada, notificando éxito');
-            // Solo pasar acciones válidas (login o register, no error)
-            if (authResult.action !== 'error') {
+            // Solo pasar acciones válidas (login o register)
+            if (authResult.action === 'login' || authResult.action === 'register') {
               onSuccess(authResult.action);
             } else {
               console.log('❌ AuthWebView: Error en el tipo de autenticación');
@@ -92,13 +92,7 @@ const AuthWebView: React.FC<AuthWebViewProps> = ({
       }
     } else if (authResult.action === 'error') {
       console.log('❌ AuthWebView: Error detectado en URL:', url);
-      // Para localhost:3000, no reportar error inmediatamente - esperar a ver si hay cookies
-      if (url.includes('localhost:3000')) {
-        console.log('⚠️ AuthWebView: localhost:3000 detectado, esperando manejo de error del WebView...');
-        // No llamar onError aquí, dejar que handleError lo maneje
-      } else {
-        onError('Error en la autenticación o acceso denegado');
-      }
+      onError('Error en la autenticación o acceso denegado');
     } else if (authResult.action === 'continue') {
       console.log('🔄 AuthWebView: Flujo normal continúa, no se requiere acción');
       // No hacer nada, es parte normal del flujo
@@ -113,22 +107,28 @@ const AuthWebView: React.FC<AuthWebViewProps> = ({
     const { nativeEvent } = syntheticEvent;
     console.error('🚨 WebView error:', nativeEvent);
     
-    // Solo intentar extraer cookies si el error es en una URL que indica que 
-    // la autenticación fue exitosa pero la redirección falló
+    // Solo intentar extraer cookies si el error sugiere que la autenticación 
+    // fue exitosa pero la redirección falló (error de conexión después del login)
     const isCallbackError = nativeEvent.url?.includes('e0as.me/auth/callback') || 
                            nativeEvent.url?.includes('e0as.me/auth/success') ||
-                           nativeEvent.url?.includes('e0as.me/dashboard') ||
-                           nativeEvent.url?.includes('localhost:3000'); // Backend mal configurado pero auth exitosa
+                           nativeEvent.url?.includes('e0as.me/dashboard');
     
     const isConnectionError = nativeEvent.description?.includes('CONNECTION_REFUSED') ||
                              nativeEvent.description?.includes('ERR_CONNECTION_REFUSED');
     
-    if (isCallbackError && isConnectionError) {
-      console.log('🔄 AuthWebView: Error de conexión en callback detectado, intentando extraer cookie...');
+    // También intentar extraer cookies si hay un error de conexión después del flujo de Cognito
+    // (podría ser una redirección mal configurada)
+    const isPotentialCallbackError = isConnectionError && 
+                                   (isCallbackError || 
+                                    nativeEvent.url?.includes('localhost') ||
+                                    nativeEvent.url?.includes('127.0.0.1'));
+    
+    if (isPotentialCallbackError) {
+      console.log('🔄 AuthWebView: Error de conexión tras autenticación detectado, intentando extraer cookie...');
       setLoading(true);
       
       try {
-        console.log('🍪 AuthWebView: Extrayendo cookie de sesión tras error de callback...');
+        console.log('🍪 AuthWebView: Extrayendo cookie de sesión tras error de redirección...');
         // Extraer cookie de sesión
         const sessionCookie = await authService.extractSessionCookie();
         
@@ -139,7 +139,7 @@ const AuthWebView: React.FC<AuthWebViewProps> = ({
           const sessionCheck = await authService.checkSession();
           
           if (sessionCheck.isValid) {
-            console.log('✅ AuthWebView: Sesión verificada tras manejo de error de callback');
+            console.log('✅ AuthWebView: Sesión verificada tras manejo de error de redirección');
             onSuccess('login');
             return;
           } else {
@@ -149,14 +149,14 @@ const AuthWebView: React.FC<AuthWebViewProps> = ({
           console.log('❌ AuthWebView: No se pudo obtener la cookie tras error');
         }
       } catch (error) {
-        console.error('💥 AuthWebView: Error extrayendo cookie tras error de callback:', error);
+        console.error('💥 AuthWebView: Error extrayendo cookie tras error de redirección:', error);
       } finally {
         setLoading(false);
       }
     }
     
-    // Para otros errores, simplemente reportar el error
-    console.log('❌ AuthWebView: Error de carga no recuperable:', nativeEvent.url);
+    // Para otros errores, reportar el error directamente
+    console.log('❌ AuthWebView: Error de carga:', nativeEvent.url, nativeEvent.description);
     onError('Error cargando la página de autenticación');
   };
 

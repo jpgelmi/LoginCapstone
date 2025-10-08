@@ -313,7 +313,6 @@ class AuthService {
       /[?&]error=/,        // URLs con parámetro error
       /access_denied/,     // Acceso denegado
       /[?&]error_code=/,   // URLs con código de error
-      /localhost/          // Excluir cualquier URL de localhost
     ];
     
     // Patrones que son parte normal del flujo (NO son errores)
@@ -372,7 +371,6 @@ class AuthService {
       /[?&]error=/,        // URLs con parámetro error
       /access_denied/,     // Acceso denegado
       /[?&]error_code=/,   // URLs con código de error
-      /localhost/          // Excluir cualquier URL de localhost
     ];
     
     if (errorPatterns.some(pattern => pattern.test(url))) {
