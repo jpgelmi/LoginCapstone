@@ -289,6 +289,42 @@ class AuthService {
   }
 
   /**
+   * Obtener el ID del usuario actual para llamadas a la API
+   */
+  async getCurrentUserId(): Promise<string | null> {
+    try {
+      console.log('🔍 AuthService: Obteniendo ID del usuario actual...');
+      
+      const sessionResult = await this.checkSession();
+      if (!sessionResult.isValid || !sessionResult.user) {
+        console.log('❌ AuthService: No hay sesión válida para obtener ID');
+        return null;
+      }
+
+      // Hacer una llamada al endpoint que devuelve la información del usuario
+      // incluyendo su ID interno (no el cognitoUserId)
+      const response = await axios.get(`${BACKEND_URL}/users/my-profile`);
+      
+      if (response.data.success && response.data.userId) {
+        console.log('✅ AuthService: ID de usuario obtenido:', response.data.userId);
+        return response.data.userId;
+      }
+      
+      // Como fallback, usar el email del usuario (si la API lo acepta)
+      if (sessionResult.user.email) {
+        console.log('⚠️ AuthService: Usando email como fallback ID:', sessionResult.user.email);
+        return sessionResult.user.email;
+      }
+      
+      console.log('❌ AuthService: No se pudo obtener ID de usuario');
+      return null;
+    } catch (error) {
+      console.error('💥 AuthService: Error obteniendo ID de usuario:', error);
+      return null;
+    }
+  }
+
+  /**
    * Verificar si una URL es de redirección exitosa
    */
   isSuccessRedirect(url: string): boolean {

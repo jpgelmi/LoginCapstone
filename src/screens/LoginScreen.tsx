@@ -39,19 +39,9 @@ const LoginScreen: React.FC = () => {
       setShowWebView(false);
       
       if (action === 'register') {
-        console.log('✅ LoginScreen: Mostrando alerta de registro exitoso');
-        Alert.alert(
-          'Registro Exitoso',
-          'Tu cuenta ha sido creada. Ahora puedes completar tu perfil.',
-          [{ text: 'OK' }]
-        );
+        console.log('✅ LoginScreen: Registro exitoso');
       } else {
-        console.log('✅ LoginScreen: Mostrando alerta de login exitoso');
-        Alert.alert(
-          'Login Exitoso',
-          'Has iniciado sesión correctamente.',
-          [{ text: 'OK' }]
-        );
+        console.log('✅ LoginScreen: Login exitoso');
       }
     } catch (error: any) {
       console.error('💥 LoginScreen: Error in auth success:', error);
@@ -111,12 +101,11 @@ const LoginScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.button, styles.registerButton]}
-            onPress={handleRegister}
-            disabled={loading}
+            style={[styles.button, styles.registerButton, styles.disabledButton]}
+            disabled={true}
           >
-            <Text style={styles.registerButtonText}>
-              Registrarse como Deportista
+            <Text style={[styles.registerButtonText, styles.disabledButtonText]}>
+              🔒 Registrarse como Deportista - Próximamente
             </Text>
           </TouchableOpacity>
         </View>
@@ -231,6 +220,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#586069',
     textAlign: 'center',
+  },
+  // Estilos para botón deshabilitado
+  disabledButton: {
+    backgroundColor: '#f3f4f6',
+    borderColor: '#d1d5db',
+    opacity: 0.7,
+  },
+  disabledButtonText: {
+    color: '#9ca3af',
   },
 });
 
