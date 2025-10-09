@@ -2,7 +2,7 @@ import axios from 'axios';
 import CookieManager from '@react-native-cookies/cookies';
 
 // Configuración del backend
-const BACKEND_URL = 'http://e0as.me';
+const BACKEND_URL = 'https://e0as.me';
 const SESSION_COOKIE_NAME = '__Host-sid'; // El backend usa __Host-sid como cookie de sesión
 
 // Configurar axios con withCredentials
@@ -175,11 +175,54 @@ class AuthService {
     axios.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Agregar información detallada del error
+        let enhancedError = error;
+        
+        if (error.code) {
+          console.log('🔍 AuthService: Error code:', error.code);
+          
+          // Mejorar el mensaje de error basado en el código
+          switch (error.code) {
+            case 'NETWORK_ERROR':
+              enhancedError.message = 'Error de red: No se pudo conectar al servidor. Verifica tu conexión a internet.';
+              break;
+            case 'ENOTFOUND':
+              enhancedError.message = 'Error DNS: No se pudo resolver el nombre del servidor (e0as.me). Verifica tu conexión a internet.';
+              break;
+            case 'ECONNREFUSED':
+              enhancedError.message = 'Conexión rechazada: El servidor no está disponible en este momento.';
+              break;
+            case 'ETIMEDOUT':
+              enhancedError.message = 'Tiempo de espera agotado: La conexión tardó demasiado tiempo.';
+              break;
+            default:
+              if (error.message) {
+                enhancedError.message = `${error.message} (Código: ${error.code})`;
+              }
+          }
+        }
+        
         if (error.response?.status === 401) {
           // Sesión expirada, limpiar estado
+          console.log('🔓 AuthService: Sesión expirada (401), limpiando cookies...');
           await this.clearSession();
+          enhancedError.message = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
+        } else if (error.response?.status === 403) {
+          enhancedError.message = 'Acceso denegado. No tienes permisos para realizar esta acción.';
+        } else if (error.response?.status === 500) {
+          enhancedError.message = 'Error del servidor. Por favor, inténtalo más tarde.';
+        } else if (error.response?.status >= 400 && error.response?.status < 500) {
+          enhancedError.message = `Error del cliente: ${error.response.statusText || error.message} (${error.response.status})`;
         }
-        return Promise.reject(error);
+        
+        console.error('🚨 AuthService: Enhanced error details:', {
+          message: enhancedError.message,
+          status: error.response?.status,
+          code: error.code,
+          url: error.config?.url
+        });
+        
+        return Promise.reject(enhancedError);
       }
     );
   }

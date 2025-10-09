@@ -45,9 +45,47 @@ const LoginScreen: React.FC = () => {
       }
     } catch (error: any) {
       console.error('💥 LoginScreen: Error in auth success:', error);
+      
+      // Crear mensaje de error detallado
+      let errorTitle = 'Error de Autenticación';
+      let errorMessage = 'Error desconocido procesando la autenticación';
+      
+      if (error.message) {
+        errorMessage = error.message;
+        
+        // Personalizar mensaje según el tipo de error
+        if (error.message.includes('Network')) {
+          errorTitle = 'Error de Conexión';
+          errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet e inténtalo nuevamente.';
+        } else if (error.message.includes('timeout')) {
+          errorTitle = 'Tiempo de Espera Agotado';
+          errorMessage = 'La conexión tardó demasiado tiempo. Por favor, inténtalo nuevamente.';
+        } else if (error.message.includes('500')) {
+          errorTitle = 'Error del Servidor';
+          errorMessage = 'Hay un problema temporal con el servidor. Por favor, inténtalo más tarde.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          errorTitle = 'Error de Autenticación';
+          errorMessage = 'Las credenciales no son válidas. Por favor, verifica tus datos de acceso.';
+        }
+      }
+      
       Alert.alert(
-        'Error',
-        error.message || 'Error procesando la autenticación'
+        errorTitle,
+        `${errorMessage}\n\n🔍 Detalles técnicos:\n${error.message || 'Sin detalles disponibles'}\n\n📱 Compilación: Release APK`,
+        [
+          {
+            text: 'Copiar Error',
+            onPress: () => {
+              // Aquí podrías implementar copiar al clipboard si tienes la librería
+              console.log('Error copiado:', error.message);
+            },
+            style: 'default'
+          },
+          {
+            text: 'Cerrar',
+            style: 'cancel'
+          }
+        ]
       );
     }
   };
@@ -55,7 +93,60 @@ const LoginScreen: React.FC = () => {
   // Manejar error de autenticación
   const handleAuthWebViewError = (error: string) => {
     setShowWebView(false);
-    Alert.alert('Error de Autenticación', error);
+    
+    let errorTitle = 'Error de Autenticación';
+    let errorMessage = error;
+    
+    // Personalizar mensaje según el tipo de error
+    if (error.includes('net::ERR_INTERNET_DISCONNECTED')) {
+      errorTitle = 'Sin Conexión a Internet';
+      errorMessage = 'No tienes conexión a internet. Por favor, verifica tu conexión e inténtalo nuevamente.';
+    } else if (error.includes('net::ERR_NAME_NOT_RESOLVED')) {
+      errorTitle = 'Error de DNS';
+      errorMessage = 'No se pudo resolver el nombre del servidor. Verifica tu conexión a internet.';
+    } else if (error.includes('net::ERR_CONNECTION_REFUSED')) {
+      errorTitle = 'Conexión Rechazada';
+      errorMessage = 'El servidor rechazó la conexión. Puede estar temporalmente fuera de servicio.';
+    } else if (error.includes('net::ERR_SSL')) {
+      errorTitle = 'Error de Certificado SSL';
+      errorMessage = 'Hay un problema con el certificado de seguridad del servidor.';
+    }
+    
+    Alert.alert(
+      errorTitle,
+      `${errorMessage}\n\n🔍 Detalles técnicos:\n${error}\n\n📱 Compilación: Release APK\n🌐 URL: https://e0as.me`,
+      [
+        {
+          text: 'Ver Configuración',
+          onPress: () => {
+            Alert.alert(
+              'Información de Red',
+              '🔧 Configuración actual:\n\n' +
+              '• HTTPS habilitado: ✅\n' +
+              '• Cleartext traffic: ✅\n' +
+              '• Certificados del sistema: ✅\n' +
+              '• Timeout: 10 segundos\n\n' +
+              'Si el problema persiste, verifica:\n' +
+              '• Tu conexión Wi-Fi o datos móviles\n' +
+              '• Que no tengas un firewall bloqueando la app\n' +
+              '• Que el servidor esté funcionando'
+            );
+          },
+          style: 'default'
+        },
+        {
+          text: 'Reintentar',
+          onPress: () => {
+            setShowWebView(true);
+          },
+          style: 'default'
+        },
+        {
+          text: 'Cerrar',
+          style: 'cancel'
+        }
+      ]
+    );
   };
 
   // Manejar cancelación

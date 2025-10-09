@@ -11,7 +11,6 @@ interface FormsListScreenProps {
 const FormsListScreen: React.FC<FormsListScreenProps> = ({ onBack, onFormSelected }) => {
   const [forms, setForms] = useState<FormType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [assigningForm, setAssigningForm] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('[MOUNT] FormsListScreen: Componente montado');
@@ -32,28 +31,13 @@ const FormsListScreen: React.FC<FormsListScreenProps> = ({ onBack, onFormSelecte
     }
   };
 
-  const handleFormPress = async (form: FormType) => {
-    try {
-      setAssigningForm(form._id);
-      console.log('[ASSIGN] FormsListScreen: Auto-asignando formulario:', form.title);
-      
-      // Auto-asignar el formulario usando la nueva API
-      const formResponse = await formResponseService.assignFormToMe(form._id);
-      
-      console.log('[SUCCESS] FormsListScreen: Formulario auto-asignado:', formResponse._id);
-      
-      // Navegar a las preguntas del formulario
-      onFormSelected(formResponse._id, form.title);
-      
-    } catch (error) {
-      console.error('[ERROR] FormsListScreen: Error auto-asignando formulario:', error);
-      Alert.alert(
-        'Error', 
-        'No se pudo asignar el formulario. Por favor, inténtalo de nuevo.'
-      );
-    } finally {
-      setAssigningForm(null);
-    }
+  const handleFormPress = (form: FormType) => {
+    // Navegación deshabilitada - solo visualización
+    Alert.alert(
+      'Información', 
+      `Formulario: ${form.title}\nTipo: ${getFormTypeLabel(form.formType)}\nEstado: ${form.status === 'published' ? 'Publicado' : 'Borrador'}`,
+      [{ text: 'Cerrar', style: 'default' }]
+    );
   };
 
   const getFormTypeLabel = (formType: string): string => {
@@ -84,12 +68,8 @@ const FormsListScreen: React.FC<FormsListScreenProps> = ({ onBack, onFormSelecte
 
   const renderForm = ({ item }: { item: FormType }) => (
     <TouchableOpacity 
-      style={[
-        styles.formCard,
-        assigningForm === item._id && styles.formCardLoading
-      ]}
+      style={styles.formCard}
       onPress={() => handleFormPress(item)}
-      disabled={assigningForm === item._id}
     >
       <View style={styles.formHeader}>
         <Text style={styles.formTitle}>{item.title}</Text>
@@ -109,16 +89,7 @@ const FormsListScreen: React.FC<FormsListScreenProps> = ({ onBack, onFormSelecte
         Estado: {item.status === 'published' ? 'Publicado' : 'Borrador'}
       </Text>
       
-      {assigningForm === item._id && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#007AFF" />
-          <Text style={styles.loadingText}>Asignando formulario...</Text>
-        </View>
-      )}
-      
-      {assigningForm !== item._id && (
-        <Text style={styles.tapHint}>Toca para completar este formulario</Text>
-      )}
+      <Text style={styles.tapHint}>Toca para ver información del formulario</Text>
     </TouchableOpacity>
   );
 
