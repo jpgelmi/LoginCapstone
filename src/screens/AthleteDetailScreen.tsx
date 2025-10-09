@@ -320,34 +320,9 @@ const AthleteDetailScreen: React.FC<AthleteDetailScreenProps> = ({ athlete, onBa
           </TouchableOpacity>
         </View>
 
-        {/* Estado de desarrollo */}
-        <View style={styles.devBanner}>
-          <Text style={styles.devBannerText}>🚧 MODO DESARROLLO</Text>
-          <Text style={styles.devBannerSubtext}>
-            Mostrando respuesta cruda de la API de detalles del deportista
-          </Text>
-        </View>
 
-        {/* Información de la API */}
-        <View style={styles.apiInfo}>
-          <Text style={styles.apiInfoTitle}>📡 Información de la API</Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Endpoint: </Text>
-            GET https://e0as.me/dashboard/{athlete.id}/athlete
-          </Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Headers: </Text>
-            Cookie (sesión activa)
-          </Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Usuario ID: </Text>
-            {athlete.id}
-          </Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Cognito ID: </Text>
-            {athlete.cognitoUserId}
-          </Text>
-        </View>
+
+
 
         {/* Contenido principal */}
         {loading ? (
@@ -512,51 +487,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
   },
-  // Banner de desarrollo
-  devBanner: {
-    backgroundColor: '#fef3c7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#f59e0b',
-  },
-  devBannerText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#92400e',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  devBannerSubtext: {
-    fontSize: 14,
-    color: '#92400e',
-    textAlign: 'center',
-  },
-  // Información de la API
-  apiInfo: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E1E4E8',
-  },
-  apiInfoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
-  apiInfoText: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginBottom: 4,
-  },
-  apiInfoLabel: {
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
+
   // Estados de carga
   loadingContainer: {
     backgroundColor: '#FFFFFF',

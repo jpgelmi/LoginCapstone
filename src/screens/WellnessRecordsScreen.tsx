@@ -253,30 +253,9 @@ const WellnessRecordsScreen: React.FC<WellnessRecordsScreenProps> = ({
           <Text style={styles.userInfo}>ID: {userId}</Text>
         </View>
 
-        {/* Estado de desarrollo */}
-        <View style={styles.devBanner}>
-          <Text style={styles.devBannerText}>🚧 MODO DESARROLLO</Text>
-          <Text style={styles.devBannerSubtext}>
-            Mostrando registros de wellness del deportista
-          </Text>
-        </View>
 
-        {/* Información de la API */}
-        <View style={styles.apiInfo}>
-          <Text style={styles.apiInfoTitle}>📡 Información de la API</Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Endpoint: </Text>
-            GET https://e0as.me/wellness/{userId}?limit=30&offset=0
-          </Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Headers: </Text>
-            Cookie (sesión activa)
-          </Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Parámetros: </Text>
-            limit=30, offset=0
-          </Text>
-        </View>
+
+
 
         {/* Contenido principal */}
         {loading ? (
@@ -397,50 +376,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
   },
-  devBanner: {
-    backgroundColor: '#fef3c7',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f59e0b',
-  },
-  devBannerText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#92400e',
-    textAlign: 'center',
-  },
-  devBannerSubtext: {
-    fontSize: 12,
-    color: '#92400e',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  apiInfo: {
-    backgroundColor: '#f0f9ff',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#0ea5e9',
-  },
-  apiInfoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0c4a6e',
-    marginBottom: 8,
-  },
-  apiInfoText: {
-    fontSize: 12,
-    color: '#0c4a6e',
-    marginBottom: 4,
-  },
-  apiInfoLabel: {
-    fontWeight: '600',
-  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

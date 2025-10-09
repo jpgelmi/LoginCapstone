@@ -84,7 +84,7 @@ const LoginScreen: React.FC = () => {
           <View style={styles.logoContainer}>
             <Text style={styles.logoText}>🏃‍♂️</Text>
           </View>
-          <Text style={styles.title}>LoginCapstone</Text>
+          <Text style={styles.title}>Registro Medicina Deportiva</Text>
           <Text style={styles.subtitle}>Sistema de Gestión Deportiva UC</Text>
         </View>
 
@@ -111,25 +111,8 @@ const LoginScreen: React.FC = () => {
         </View>
 
         {/* Información adicional */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoText}>
-            • Solo deportistas pueden auto-registrarse
-          </Text>
-          <Text style={styles.infoText}>
-            • El equipo de salud y entrenadores son registrados por un administrador
-          </Text>
-          <Text style={styles.infoText}>
-            • Utiliza tu email institucional UC
-          </Text>
-        </View>
       </View>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          © 2025 Pontificia Universidad Católica de Chile
-        </Text>
-      </View>
     </SafeAreaView>
   );
 };
@@ -165,6 +148,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#24292E',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,

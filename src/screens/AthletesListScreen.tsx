@@ -32,8 +32,6 @@ interface AthletesListScreenProps {
 const AthletesListScreen: React.FC<AthletesListScreenProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [rawResponse, setRawResponse] = useState<string>('');
-  const [showRawData, setShowRawData] = useState(false);
   const [error, setError] = useState<string>('');
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
 
@@ -75,9 +73,6 @@ const AthletesListScreen: React.FC<AthletesListScreenProps> = ({ onBack }) => {
         const responseText = await response.text();
         console.log('✅ AthletesListScreen: Datos recibidos exitosamente:', responseText);
         
-        // Guardar respuesta cruda para modo debug
-        setRawResponse(responseText);
-        
         // Intentar parsear como JSON y extraer deportistas
         try {
           const jsonData: AthletesResponse = JSON.parse(responseText);
@@ -115,10 +110,6 @@ const AthletesListScreen: React.FC<AthletesListScreenProps> = ({ onBack }) => {
 
   const handleRetry = () => {
     fetchAthletes();
-  };
-
-  const toggleRawData = () => {
-    setShowRawData(!showRawData);
   };
 
   const handleAthletePress = (athlete: Athlete) => {
@@ -189,27 +180,6 @@ const AthletesListScreen: React.FC<AthletesListScreenProps> = ({ onBack }) => {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Estado de desarrollo */}
-        <View style={styles.devBanner}>
-          <Text style={styles.devBannerText}>🚧 MODO DESARROLLO</Text>
-          <Text style={styles.devBannerSubtext}>
-            Mostrando respuesta cruda de la API para debugging
-          </Text>
-        </View>
-
-        {/* Información de la API */}
-        <View style={styles.apiInfo}>
-          <Text style={styles.apiInfoTitle}>📡 Información de la API</Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Endpoint: </Text>
-            GET https://e0as.me/athletes
-          </Text>
-          <Text style={styles.apiInfoText}>
-            <Text style={styles.apiInfoLabel}>Headers: </Text>
-            Cookie (sesión activa)
-          </Text>
-        </View>
-
         {/* Contenido principal */}
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -227,48 +197,29 @@ const AthletesListScreen: React.FC<AthletesListScreenProps> = ({ onBack }) => {
           </View>
         ) : (
           <>
-            {/* Contador de deportistas y botón debug */}
+            {/* Contador de deportistas */}
             <View style={styles.statsContainer}>
               <Text style={styles.statsText}>
                 👥 {athletes.length} deportista{athletes.length !== 1 ? 's' : ''} encontrado{athletes.length !== 1 ? 's' : ''}
               </Text>
-              <TouchableOpacity style={styles.debugButton} onPress={toggleRawData}>
-                <Text style={styles.debugButtonText}>
-                  {showRawData ? '📱 Ver Tarjetas' : '🔍 Ver Debug'}
-                </Text>
-              </TouchableOpacity>
             </View>
 
-            {showRawData ? (
-              /* Modo debug - mostrar respuesta cruda */
-              <View style={styles.responseContainer}>
-                <Text style={styles.responseTitle}>📋 Respuesta cruda de la API</Text>
-                <ScrollView 
-                  style={styles.responseScroll} 
-                  nestedScrollEnabled={true}
-                  showsVerticalScrollIndicator={true}
-                >
-                  <Text style={styles.responseText}>{rawResponse}</Text>
-                </ScrollView>
-              </View>
-            ) : (
-              /* Modo normal - mostrar tarjetas */
-              <View style={styles.athletesContainer}>
-                {athletes.length > 0 ? (
-                  athletes.map((athlete) => (
-                    <AthleteCard key={athlete._id} athlete={athlete} />
-                  ))
-                ) : (
-                  <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyIcon}>👤</Text>
-                    <Text style={styles.emptyTitle}>No hay deportistas</Text>
-                    <Text style={styles.emptyMessage}>
-                      No se encontraron deportistas asignados a tu perfil médico.
-                    </Text>
-                  </View>
-                )}
-              </View>
-            )}
+            {/* Modo normal - mostrar tarjetas */}
+            <View style={styles.athletesContainer}>
+              {athletes.length > 0 ? (
+                athletes.map((athlete) => (
+                  <AthleteCard key={athlete._id} athlete={athlete} />
+                ))
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyIcon}>👤</Text>
+                  <Text style={styles.emptyTitle}>No hay deportistas</Text>
+                  <Text style={styles.emptyMessage}>
+                    No se encontraron deportistas asignados a tu perfil médico.
+                  </Text>
+                </View>
+              )}
+            </View>
           </>
         )}
 
@@ -319,50 +270,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  devBanner: {
-    backgroundColor: '#fef3c7',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#f59e0b',
-  },
-  devBannerText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#92400e',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  devBannerSubtext: {
-    fontSize: 14,
-    color: '#92400e',
-    textAlign: 'center',
-  },
-  apiInfo: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E1E4E8',
-  },
-  apiInfoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
-  apiInfoText: {
-    fontSize: 14,
-    color: '#4b5563',
-    marginBottom: 4,
-  },
-  apiInfoLabel: {
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
+
   loadingContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -414,40 +322,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
   },
-  responseContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E1E4E8',
-  },
-  responseTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
-  responseScroll: {
-    maxHeight: 400,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    padding: 12,
-  },
-  responseText: {
-    fontSize: 12,
-    color: '#374151',
-    fontFamily: 'Courier New', // Fuente monoespaciada para JSON
-    lineHeight: 16,
-  },
+
   footerSpacer: {
     height: 32,
   },
-  // Estilos para las estadísticas y debug
+  // Estilos para las estadísticas
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
@@ -459,17 +339,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1a1a1a',
-  },
-  debugButton: {
-    backgroundColor: '#6b7280',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  debugButtonText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontWeight: '500',
   },
   // Estilos para el contenedor de deportistas
   athletesContainer: {

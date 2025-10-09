@@ -75,6 +75,12 @@ const HomeScreen: React.FC = () => {
     setShowForms(false);
   };
 
+  // Manejar selección de formulario
+  const handleFormSelected = (formResponseId: string, formTitle: string) => {
+    console.log('📝 HomeScreen: Formulario seleccionado:', formTitle, 'ID:', formResponseId);
+    // Aquí puedes agregar navegación a la pantalla de respuesta del formulario
+  };
+
   // Renderizar contenido específico según el rol
   const renderRoleSpecificContent = () => {
     if (!user) return null;
@@ -259,7 +265,7 @@ const HomeScreen: React.FC = () => {
 
   if (showForms) {
     return (
-      <FormsListScreen onBack={handleBackFromForms} />
+      <FormsListScreen onBack={handleBackFromForms} onFormSelected={handleFormSelected} />
     );
   }
 
@@ -287,7 +293,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   welcomeText: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 8,
