@@ -1,4 +1,5 @@
 import authService from './AuthService';
+import axios from 'axios';
 
 const BASE_URL = 'https://e0as.me';
 
@@ -44,55 +45,7 @@ export interface FormResponsesFilter {
 
 class FormResponseService {
   
-  /**
-   * Función de prueba para diferentes formatos de cookie
-   */
-  private async testCookieFormats(originalCookie: string): Promise<string | null> {
-    console.log('[TEST] FormResponseService: testCookieFormats - Cookie original:', originalCookie);
-    
-    // Extraer solo el valor de la cookie (la parte después del =)
-    const cookieValue = originalCookie.includes('=') ? originalCookie.split('=')[1] : originalCookie;
-    console.log('[TEST] FormResponseService: Valor extraído de la cookie:', cookieValue);
-    
-    // Diferentes formatos a probar
-    const formatosAPorbar = [
-      `_Host-sid=${cookieValue}`,     // Una sola barra baja (sugerencia del usuario)
-      `Host-sid=${cookieValue}`,      // Sin barras bajas
-      `sid=${cookieValue}`,           // Solo 'sid'
-      `session=${cookieValue}`,       // 'session' simple
-      cookieValue,                    // Solo el valor
-    ];
-    
-    console.log('[TEST] FormResponseService: Probando formatos:', formatosAPorbar);
-    
-    // Probar cada formato
-    for (let i = 0; i < formatosAPorbar.length; i++) {
-      const formato = formatosAPorbar[i];
-      console.log(`[TEST] FormResponseService: Probando formato ${i + 1}/${formatosAPorbar.length}: ${formato}`);
-      
-      try {
-        const testResponse = await fetch(`${BASE_URL}/form-responses/me`, {
-          method: 'GET',
-          headers: {
-            'Cookie': formato,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        console.log(`   Status: ${testResponse.status}`);
-        
-        if (testResponse.ok) {
-          console.log('[SUCCESS] FormResponseService: Formato exitoso encontrado:', formato);
-          return formato;
-        }
-      } catch (error) {
-        console.log(`   Error con formato: ${error}`);
-      }
-    }
-    
-    console.log('[ERROR] FormResponseService: Ningún formato de cookie funcionó');
-    return null;
-  }
+  
 
   /**
    * Obtener header con cookie de sesión
@@ -117,21 +70,11 @@ class FormResponseService {
     try {
       console.log('[FETCH] FormResponseService: Obteniendo formularios disponibles...');
       
-      const headers = await this.getHeaders();
-      const response = await fetch(`${BASE_URL}/forms`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error obteniendo formularios: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('[SUCCESS] FormResponseService: Formularios obtenidos:', data.data?.length);
+      const response = await axios.get(`${BASE_URL}/forms`);
       
-      return data.data || [];
+      console.log('[SUCCESS] FormResponseService: Formularios obtenidos:', response.data.data?.length);
+      
+      return response.data.data || [];
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error obteniendo formularios:', error);
       throw error;
@@ -140,33 +83,20 @@ class FormResponseService {
 
   /**
    * Auto-asignar un formulario al usuario actual
-   * POST /form-responses/assign/me
+   * POST /athletes/me/form-responses/assign
    */
   async assignFormToMe(formId: string, questionsToAsk: string[] = []): Promise<FormResponse> {
     try {
       console.log('[ASSIGN] FormResponseService: Auto-asignando formulario:', formId);
       
-      const headers = await this.getHeaders();
-      const body = {
+      const response = await axios.post(`${BASE_URL}/athletes/me/form-responses/assign`, {
         formId,
         questionsToAsk
-      };
-
-      const response = await fetch(`${BASE_URL}/form-responses/assign/me`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error auto-asignando formulario: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('[SUCCESS] FormResponseService: Formulario auto-asignado:', data.data._id);
+      console.log('[SUCCESS] FormResponseService: Formulario auto-asignado:', response.data.data._id);
       
-      return data.data;
+      return response.data.data;
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error auto-asignando formulario:', error);
       throw error;
@@ -181,21 +111,11 @@ class FormResponseService {
     try {
       console.log('[FETCH] FormResponseService: Obteniendo preguntas del formulario:', formResponseId);
       
-      const headers = await this.getHeaders();
-      const response = await fetch(`${BASE_URL}/form-responses/form/${formResponseId}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error obteniendo preguntas: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('[SUCCESS] FormResponseService: Preguntas obtenidas:', data.data.questions?.length);
+      const response = await axios.get(`${BASE_URL}/form-responses/form/${formResponseId}`);
       
-      return data.data;
+      console.log('[SUCCESS] FormResponseService: Preguntas obtenidas:', response.data.data.questions?.length);
+      
+      return response.data.data;
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error obteniendo preguntas:', error);
       throw error;
@@ -207,15 +127,14 @@ class FormResponseService {
    * POST /form-responses
    */
   async saveFormResponses(
-    formId: string, 
-    formResponseId: string, 
+    formId: string,
+    formResponseId: string,
     responses: Array<{ questionId: string; answer: any }>,
     status: 'draft' | 'submitted' = 'draft'
   ): Promise<FormResponse> {
     try {
       console.log('[SAVE] FormResponseService: Guardando respuestas como:', status);
       
-      const headers = await this.getHeaders();
       const body = {
         formId,
         formResponseId,
@@ -223,21 +142,11 @@ class FormResponseService {
         responses
       };
 
-      const response = await fetch(`${BASE_URL}/form-responses`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error guardando respuestas: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
+      const response = await axios.post(`${BASE_URL}/form-responses`, body);
+      
       console.log('[SUCCESS] FormResponseService: Respuestas guardadas correctamente');
       
-      return data.data;
+      return response.data.data;
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error guardando respuestas:', error);
       throw error;
@@ -252,21 +161,11 @@ class FormResponseService {
     try {
       console.log('[SUBMIT] FormResponseService: Enviando formulario:', formResponseId);
       
-      const headers = await this.getHeaders();
-      const response = await fetch(`${BASE_URL}/form-responses/response/${formResponseId}/submit`, {
-        method: 'PATCH',
-        headers,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error enviando formulario: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
+      const response = await axios.patch(`${BASE_URL}/form-responses/response/${formResponseId}/submit`);
+      
       console.log('[SUCCESS] FormResponseService: Formulario enviado exitosamente');
       
-      return data.data;
+      return response.data.data;
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error enviando formulario:', error);
       throw error;
@@ -281,12 +180,6 @@ class FormResponseService {
     try {
       console.log('[FETCH] FormResponseService: Obteniendo mis respuestas con filtros:', filters);
       
-      const headers = await this.getHeaders();
-      console.log('[AUTH] FormResponseService: Headers preparados:', {
-        hasAuth: !!headers.Cookie,
-        contentType: headers['Content-Type']
-      });
-      
       // Construir query string con filtros
       const queryParams = new URLSearchParams();
       if (filters?.formType) {
@@ -297,60 +190,18 @@ class FormResponseService {
       }
       
       const queryString = queryParams.toString();
-      const url = `${BASE_URL}/form-responses/me${queryString ? `?${queryString}` : ''}`;
+      const url = `/form-responses/me${queryString ? `?${queryString}` : ''}`;
       
-      console.log('[REQUEST] FormResponseService: URL completa a llamar:', url);
+      console.log('[REQUEST] FormResponseService: URL completa a llamar:', `${BASE_URL}${url}`);
       console.log('[REQUEST] FormResponseService: Método: GET');
       console.log('[REQUEST] FormResponseService: Query params:', queryString || 'ninguno');
       
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      const response = await axios.get(url);
 
       console.log('[RESPONSE] FormResponseService: Respuesta recibida - Status:', response.status);
-      console.log('[RESPONSE] FormResponseService: Respuesta recibida - StatusText:', response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[ERROR] FormResponseService: ERROR DETALLADO:');
-        console.error('   URL que falló:', url);
-        console.error('   Status Code:', response.status);
-        console.error('   Status Text:', response.statusText);
-        console.error('   Error Body:', errorText);
-        console.error('   Headers enviados:', JSON.stringify(headers, null, 2));
-        
-        // Si es error 403, probar diferentes formatos de cookie
-        if (response.status === 403) {
-          console.log('[TEST] FormResponseService: Error 403 detectado, probando diferentes formatos de cookie...');
-          const workingCookieFormat = await this.testCookieFormats(headers.Cookie);
-          
-          if (workingCookieFormat) {
-            console.log('[SUCCESS] FormResponseService: Formato de cookie correcto encontrado! Reintentando...');
-            // Reintentar con el formato correcto
-            const retryResponse = await fetch(url, {
-              method: 'GET',
-              headers: {
-                'Cookie': workingCookieFormat,
-                'Content-Type': 'application/json',
-              },
-            });
-            
-            if (retryResponse.ok) {
-              const retryData = await retryResponse.json();
-              console.log('[SUCCESS] FormResponseService: Éxito con formato corregido!');
-              return retryData.data || [];
-            }
-          }
-        }
-        
-        throw new Error(`Error obteniendo respuestas: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('[SUCCESS] FormResponseService: Respuestas obtenidas:', data.data?.length);
+      console.log('[SUCCESS] FormResponseService: Respuestas obtenidas:', response.data.data?.length);
       
-      return data.data || [];
+      return response.data.data || [];
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error obteniendo respuestas:', error);
       throw error;
@@ -365,21 +216,11 @@ class FormResponseService {
     try {
       console.log('[FETCH] FormResponseService: Obteniendo respuestas por tipo:', formType);
       
-      const headers = await this.getHeaders();
-      const response = await fetch(`${BASE_URL}/form-responses/me/type/${formType}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error obteniendo respuestas por tipo: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('[SUCCESS] FormResponseService: Respuestas por tipo obtenidas:', data.data?.length);
+      const response = await axios.get(`${BASE_URL}/form-responses/me/type/${formType}`);
       
-      return data.data || [];
+      console.log('[SUCCESS] FormResponseService: Respuestas por tipo obtenidas:', response.data.data?.length);
+      
+      return response.data.data || [];
     } catch (error) {
       console.error('[ERROR] FormResponseService: Error obteniendo respuestas por tipo:', error);
       throw error;

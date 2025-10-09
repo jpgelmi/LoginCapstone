@@ -13,15 +13,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import formResponseService, { FormQuestion, FormResponse } from '../services/FormResponseService';
 
 interface FormResponseScreenProps {
-  formId: string;
+  formResponseId: string;
   formTitle: string;
   onBack: () => void;
+  onCompleted: () => void;
 }
 
 const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
-  formId,
+  formResponseId,
   formTitle,
   onBack,
+  onCompleted,
 }) => {
   
   const [questions, setQuestions] = useState<FormQuestion[]>([]);
@@ -40,12 +42,11 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
       
       console.log('� FormResponse: Inicializando formulario con nuevo servicio...');
       
-      // Usar el flujo completo del servicio
-      const { formResponse: response, isNew } = await formResponseService.getOrCreateFormResponse(formId);
+      // Usar la nueva API para obtener las preguntas
+      const response = await formResponseService.getFormQuestions(formResponseId);
       
       console.log('✅ FormResponse: Formulario inicializado:', {
         responseId: response._id,
-        isNew,
         questionsCount: response.questions?.length
       });
       
@@ -69,11 +70,11 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
 
   useEffect(() => {
     console.log('[MOUNT] FormResponse: Componente montado');
-    console.log('[MOUNT] FormResponse: Form ID:', formId);
+    console.log('[MOUNT] FormResponse: FormResponse ID:', formResponseId);
     console.log('[MOUNT] FormResponse: Form Title:', formTitle);
     
     initializeForm();
-  }, [formId]);
+  }, [formResponseId]);
 
   // Función para actualizar respuesta de una pregunta
   const updateResponse = (questionId: string, value: any) => {
@@ -297,15 +298,14 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
               await formResponseService.saveFormResponses(
                 formResponse.formId,
                 formResponse._id,
-                formattedResponses,
-                'draft'
+                formattedResponses
               );
               
               // Luego enviar el formulario
               await formResponseService.submitForm(formResponse._id);
               
               Alert.alert('Éxito', 'Formulario enviado correctamente', [
-                { text: 'OK', onPress: onBack }
+                { text: 'OK', onPress: onCompleted }
               ]);
               
             } catch (error) {

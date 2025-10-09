@@ -441,6 +441,173 @@ class AuthService {
     // Por defecto, continuar (podría ser cualquier otra página intermedia)
     return { success: false, action: 'continue' };
   }
+
+  // ==========================================
+  // FORMULARIOS - API FUNCTIONS
+  // ==========================================
+
+  /**
+   * 1. Ver formularios disponibles
+   * GET /forms
+   */
+  async getForms(): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      console.log('📋 AuthService: Obteniendo formularios disponibles...');
+      
+      const response = await axios.get(`${BACKEND_URL}/forms`);
+      
+      if (response.data && response.data.data) {
+        console.log('✅ AuthService: Formularios obtenidos exitosamente');
+        return {
+          success: true,
+          data: response.data.data
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No se pudieron obtener los formularios'
+      };
+    } catch (error: any) {
+      console.error('💥 AuthService: Error obteniendo formularios:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error obteniendo formularios'
+      };
+    }
+  }
+
+  /**
+   * 2. Auto-asignarse un formulario
+   * POST /athletes/me/form-responses/assign
+   */
+  async assignForm(formId: string, questionsToAsk: string[] = []): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log('📝 AuthService: Auto-asignando formulario:', formId);
+      
+      const response = await axios.post(`${BACKEND_URL}/athletes/me/form-responses/assign`, {
+        formId: formId,
+        questionsToAsk: questionsToAsk
+      });
+      
+      if (response.data && response.data.data) {
+        console.log('✅ AuthService: Formulario asignado exitosamente');
+        return {
+          success: true,
+          data: response.data.data
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No se pudo asignar el formulario'
+      };
+    } catch (error: any) {
+      console.error('💥 AuthService: Error asignando formulario:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error asignando formulario'
+      };
+    }
+  }
+
+  /**
+   * 3. Ver las preguntas del formulario
+   * GET /form-responses/form/{formResponseId}
+   */
+  async getFormQuestions(formResponseId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log('❓ AuthService: Obteniendo preguntas del formulario:', formResponseId);
+      
+      const response = await axios.get(`${BACKEND_URL}/form-responses/form/${formResponseId}`);
+      
+      if (response.data && response.data.data) {
+        console.log('✅ AuthService: Preguntas obtenidas exitosamente');
+        return {
+          success: true,
+          data: response.data.data
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No se pudieron obtener las preguntas'
+      };
+    } catch (error: any) {
+      console.error('💥 AuthService: Error obteniendo preguntas:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error obteniendo preguntas del formulario'
+      };
+    }
+  }
+
+  /**
+   * 4. Guardar respuestas (puede hacerse múltiples veces)
+   * POST /form-responses
+   */
+  async saveFormResponses(formId: string, formResponseId: string, responses: Array<{ questionId: string; answer: any }>): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log('💾 AuthService: Guardando respuestas del formulario:', formResponseId);
+      
+      const response = await axios.post(`${BACKEND_URL}/form-responses`, {
+        formId: formId,
+        formResponseId: formResponseId,
+        status: 'draft', // Sigue como borrador
+        responses: responses
+      });
+      
+      if (response.data) {
+        console.log('✅ AuthService: Respuestas guardadas exitosamente');
+        return {
+          success: true,
+          data: response.data
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No se pudieron guardar las respuestas'
+      };
+    } catch (error: any) {
+      console.error('💥 AuthService: Error guardando respuestas:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error guardando respuestas del formulario'
+      };
+    }
+  }
+
+  /**
+   * 5. Enviar formulario completado
+   * PATCH /form-responses/response/{formResponseId}/submit
+   */
+  async submitForm(formResponseId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      console.log('📤 AuthService: Enviando formulario completado:', formResponseId);
+      
+      const response = await axios.patch(`${BACKEND_URL}/form-responses/response/${formResponseId}/submit`);
+      
+      if (response.data && response.data.data) {
+        console.log('✅ AuthService: Formulario enviado exitosamente');
+        return {
+          success: true,
+          data: response.data.data
+        };
+      }
+      
+      return {
+        success: false,
+        error: 'No se pudo enviar el formulario'
+      };
+    } catch (error: any) {
+      console.error('💥 AuthService: Error enviando formulario:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Error enviando formulario'
+      };
+    }
+  }
 }
 
 // Instancia singleton
