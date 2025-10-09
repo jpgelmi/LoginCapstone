@@ -80,45 +80,69 @@ class AuthService {
    */
   async extractSessionCookie(): Promise<string | null> {
     try {
+      console.log('[AUTH] AuthService: INICIANDO búsqueda de cookies...');
+      
+      // Primero intentar obtener TODAS las cookies disponibles
+      try {
+        const allCookies = await CookieManager.getAll();
+        console.log('[AUTH] AuthService: TODAS las cookies disponibles:', JSON.stringify(allCookies, null, 2));
+      } catch (allCookiesError) {
+        console.log('[WARNING] AuthService: No se pudieron obtener todas las cookies:', allCookiesError);
+      }
+      
       // Lista de dominios/URLs donde buscar la cookie
       const domainsToCheck = [
         BACKEND_URL,
         'https://e0as.me',
         'http://e0as.me',
+        'e0as.me',
+        '.e0as.me',
+        'localhost',
         'https://us-east-2rlcyf2wsk.auth.us-east-2.amazoncognito.com'
       ];
       
       for (const domain of domainsToCheck) {
         try {
-          console.log('🍪 AuthService: Extrayendo cookies del dominio:', domain);
+          console.log('[COOKIE] AuthService: Extrayendo cookies del dominio:', domain);
           const cookies = await CookieManager.get(domain);
-          console.log('🍪 AuthService: Cookies encontradas:', Object.keys(cookies));
-          console.log('🍪 AuthService: Valores de cookies:', JSON.stringify(cookies, null, 2));
+          console.log('[COOKIE] AuthService: Cookies encontradas:', Object.keys(cookies));
+          console.log('[COOKIE] AuthService: Valores de cookies:', JSON.stringify(cookies, null, 2));
           
           // Buscar cookie por varios nombres posibles (el backend usa __Host-sid)
-          const possibleNames = ['__Host-sid', SESSION_COOKIE_NAME, 'session', 'sessionId', 'auth_token', 'connect.sid'];
+          const possibleNames = [
+            '__Host-sid',    // Doble underscore (actual)
+            '_Host-sid',     // Un solo underscore (posible alternativa)
+            'Host-sid',      // Sin underscores
+            SESSION_COOKIE_NAME, 
+            'session', 
+            'sessionId', 
+            'auth_token', 
+            'connect.sid'
+          ];
           
           for (const cookieName of possibleNames) {
             if (cookies[cookieName]) {
               this.sessionCookie = cookies[cookieName].value;
-              console.log('✅ AuthService: Cookie de sesión encontrada:', cookieName, 'en dominio:', domain);
-              return this.sessionCookie;
+              const fullCookie = `${cookieName}=${cookies[cookieName].value}`;
+              console.log('[SUCCESS] AuthService: Cookie de sesión encontrada:', cookieName, 'en dominio:', domain);
+              console.log('[AUTH] AuthService: Cookie completa formateada:', fullCookie);
+              return fullCookie;
             }
           }
           
           // Si no se encontró por nombre, mostrar todas las cookies disponibles para debug
           if (Object.keys(cookies).length > 0) {
-            console.log('🔍 AuthService: Cookies disponibles en', domain, ':', cookies);
+            console.log('[DEBUG] AuthService: Cookies disponibles en', domain, ':', cookies);
           }
         } catch (domainError) {
-          console.log('⚠️ AuthService: No se pudieron obtener cookies de:', domain);
+          console.log('[WARNING] AuthService: No se pudieron obtener cookies de:', domain);
         }
       }
       
-      console.log('❌ AuthService: No se encontró cookie de sesión en ningún dominio');
+      console.log('[ERROR] AuthService: No se encontró cookie de sesión en ningún dominio');
       return null;
     } catch (error) {
-      console.error('💥 AuthService: Error extracting session cookie:', error);
+      console.error('[ERROR] AuthService: Error extracting session cookie:', error);
       return null;
     }
   }
@@ -134,10 +158,10 @@ class AuthService {
         if (this.sessionCookie) {
           config.headers.Cookie = `${SESSION_COOKIE_NAME}=${this.sessionCookie}`;
         } else {
-          // Intentar obtener cookie del store nativo
-          const cookie = await this.extractSessionCookie();
-          if (cookie) {
-            config.headers.Cookie = `${SESSION_COOKIE_NAME}=${cookie}`;
+          // Intentar obtener cookie del store nativo (ya viene completa con nombre=valor)
+          const fullCookie = await this.extractSessionCookie();
+          if (fullCookie) {
+            config.headers.Cookie = fullCookie;
           }
         }
         return config;

@@ -10,19 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import authService from '../services/AuthService';
-
-interface FormQuestion {
-  id: string;
-  enunciado: string;
-  tipo: 'opcionMultiple' | 'numero' | 'escala';
-  opciones?: string[];
-  requerida: boolean;
-  escalaMin?: number;
-  escalaMax?: number;
-  validaciones?: any;
-  userAnswer?: any;
-}
+import formResponseService, { FormQuestion, FormResponse } from '../services/FormResponseService';
 
 interface FormResponseScreenProps {
   formId: string;
@@ -39,194 +27,40 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
   const [questions, setQuestions] = useState<FormQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formResponseId, setFormResponseId] = useState<string | null>(null);
+  const [formResponse, setFormResponse] = useState<FormResponse | null>(null);
   const [responses, setResponses] = useState<{[questionId: string]: any}>({});
   const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Función para verificar si existe una respuesta existente
-  const getExistingFormResponseId = async (): Promise<string | null> => {
-    try {
-      console.log('🔍 FormResponse: Verificando respuesta existente...');
-      
-      const sessionCookie = await authService.extractSessionCookie();
-      if (!sessionCookie) {
-        throw new Error('No hay cookie de sesión');
-      }
-
-      const response = await fetch('https://e0as.me/form-responses/me', {
-        method: 'GET',
-        headers: {
-          'Cookie': sessionCookie,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('📡 FormResponse: Response status para existing:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📄 FormResponse: Respuestas existentes:', data);
-        
-        // Buscar si hay una respuesta para este formId
-        if (data.data && Array.isArray(data.data)) {
-          const existingResponse = data.data.find((resp: any) => 
-            resp.formId === formId || resp.formId._id === formId
-          );
-          
-          if (existingResponse) {
-            console.log('✅ FormResponse: Respuesta existente encontrada:', existingResponse._id);
-            return existingResponse._id;
-          }
-        }
-      }
-      
-      console.log('📝 FormResponse: No hay respuesta existente');
-      return null;
-    } catch (error) {
-      console.log('❌ FormResponse: Error verificando respuesta existente:', error);
-      return null;
-    }
-  };
-
-  // Función para auto-asignar el formulario
-  const assignFormToMe = async (): Promise<string | null> => {
-    try {
-      console.log('🔄 FormResponse: Auto-asignando formulario...');
-      
-      const sessionCookie = await authService.extractSessionCookie();
-      if (!sessionCookie) {
-        throw new Error('No hay cookie de sesión');
-      }
-
-      const url = 'https://e0as.me/form-responses/assign/me';
-      console.log('🌐 FormResponse: URL para auto-asignación:', url);
-      
-      const body = { formId };
-      console.log('📋 FormResponse: Body:', body);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Cookie': sessionCookie,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const responseText = await response.text();
-      console.log('📡 FormResponse: Auto-assign response status:', response.status);
-      console.log('📄 FormResponse: Auto-assign response:', responseText);
-
-      if (response.status === 409) {
-        // El usuario ya tiene una respuesta asignada
-        const errorData = JSON.parse(responseText);
-        console.log('❌ FormResponse: Error auto-asignando:', errorData);
-        throw new Error(`Error auto-asignando formulario: ${response.status} - ${responseText}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(`Error auto-asignando formulario: ${response.status} - ${responseText}`);
-      }
-
-      const data = JSON.parse(responseText);
-      console.log('✅ FormResponse: Formulario auto-asignado:', data);
-      return data.data._id;
-    } catch (error) {
-      console.log('💥 FormResponse: Error en auto-asignación:', error);
-      throw error;
-    }
-  };
-
-  // Función para obtener las preguntas del formulario
-  const fetchFormQuestions = async (responseId: string) => {
-    try {
-      console.log('📋 FormResponse: Obteniendo FormResponse con preguntas...');
-      
-      const sessionCookie = await authService.extractSessionCookie();
-      if (!sessionCookie) {
-        throw new Error('No hay cookie de sesión');
-      }
-
-      const url = `https://e0as.me/form-responses/form/${responseId}`;
-      console.log('🌐 FormResponse: URL del API:', url);
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Cookie': sessionCookie,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const responseText = await response.text();
-      console.log('📡 FormResponse: Response status:', response.status);
-      console.log('📄 FormResponse: Response completo:', responseText);
-
-      if (!response.ok) {
-        throw new Error(`Error obteniendo preguntas: ${response.status} - ${responseText}`);
-      }
-
-      const data = JSON.parse(responseText);
-      console.log('✅ FormResponse: FormResponse obtenido:', data);
-      
-      if (data.data && data.data.questions) {
-        setQuestions(data.data.questions);
-        
-        // Inicializar respuestas existentes si las hay
-        const existingResponses: {[questionId: string]: any} = {};
-        data.data.questions.forEach((question: FormQuestion) => {
-          if (question.userAnswer !== null && question.userAnswer !== undefined) {
-            existingResponses[question.id] = question.userAnswer;
-          }
-        });
-        setResponses(existingResponses);
-        
-        console.log('📊 FormResponse: Estado actualizado:', {
-          questionsCount: data.data.questions.length,
-          totalQuestions: data.data.totalQuestions,
-          answeredQuestions: data.data.answeredQuestions
-        });
-      }
-    } catch (error) {
-      console.log('💥 FormResponse: Error obteniendo preguntas:', error);
-      throw error;
-    }
-  };
-
-  // Función principal de inicialización
+  // Función principal de inicialización usando el nuevo servicio
   const initializeForm = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      console.log('🚀 FormResponse: Inicializando formulario...');
+      console.log('� FormResponse: Inicializando formulario con nuevo servicio...');
       
-      // Paso 1: Verificar si ya existe una respuesta
-      console.log('📋 FormResponse: Paso 1 - Verificando respuesta existente...');
-      let responseId = await getExistingFormResponseId();
+      // Usar el flujo completo del servicio
+      const { formResponse: response, isNew } = await formResponseService.getOrCreateFormResponse(formId);
       
-      if (!responseId) {
-        // Paso 2: Si no existe, auto-asignar el formulario
-        console.log('📋 FormResponse: Paso 2 - Auto-asignando formulario...');
-        responseId = await assignFormToMe();
-      } else {
-        console.log('✅ FormResponse: Usando respuesta existente:', responseId);
-      }
+      console.log('✅ FormResponse: Formulario inicializado:', {
+        responseId: response._id,
+        isNew,
+        questionsCount: response.questions?.length
+      });
       
-      if (responseId) {
-        setFormResponseId(responseId);
-        
-        // Paso 3: Obtener las preguntas
-        console.log('📋 FormResponse: Paso 3 - Obteniendo preguntas...');
-        await fetchFormQuestions(responseId);
-        
-        console.log('🎉 FormResponse: Inicialización completada exitosamente');
-      } else {
-        throw new Error('No se pudo obtener el ID de la respuesta del formulario');
-      }
+      setFormResponse(response);
+      setQuestions(response.questions || []);
+      
+      // Inicializar respuestas existentes si las hay
+      const existingResponses: {[questionId: string]: any} = {};
+      response.responses?.forEach(resp => {
+        existingResponses[resp.questionId] = resp.answer;
+      });
+      setResponses(existingResponses);
       
     } catch (error) {
-      console.log('💥 FormResponse: Error inicializando formulario:', error);
+      console.error('[ERROR] FormResponse: Error inicializando formulario:', error);
       setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
       setLoading(false);
@@ -234,25 +68,68 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
   };
 
   useEffect(() => {
-    console.log('📝 FormResponse: Componente montado');
-    console.log('📝 FormResponse: Form ID:', formId);
-    console.log('📝 FormResponse: Form Title:', formTitle);
+    console.log('[MOUNT] FormResponse: Componente montado');
+    console.log('[MOUNT] FormResponse: Form ID:', formId);
+    console.log('[MOUNT] FormResponse: Form Title:', formTitle);
     
     initializeForm();
   }, [formId]);
 
   // Función para actualizar respuesta de una pregunta
   const updateResponse = (questionId: string, value: any) => {
-    console.log('📝 FormResponse: Actualizando respuesta:', { questionId, value });
+    console.log('[UPDATE] FormResponse: Actualizando respuesta:', { questionId, value });
     setResponses(prev => ({
       ...prev,
       [questionId]: value
     }));
   };
 
+  // Función para renderizar pregunta de texto
+  const renderTextQuestion = (question: FormQuestion) => {
+    const value = responses[question._id] || '';
+    
+    return (
+      <View style={styles.questionContainer}>
+        <Text style={styles.questionText}>{question.enunciado}</Text>
+        {question.requerida && <Text style={styles.requiredText}>* Requerida</Text>}
+        
+        <TextInput
+          style={styles.textInput}
+          value={value.toString()}
+          onChangeText={(text) => updateResponse(question._id, text)}
+          placeholder="Escribe tu respuesta"
+          multiline
+        />
+      </View>
+    );
+  };
+
+  // Función para renderizar pregunta numérica
+  const renderNumericQuestion = (question: FormQuestion) => {
+    const value = responses[question._id] || '';
+    
+    return (
+      <View style={styles.questionContainer}>
+        <Text style={styles.questionText}>{question.enunciado}</Text>
+        {question.requerida && <Text style={styles.requiredText}>* Requerida</Text>}
+        
+        <TextInput
+          style={styles.textInput}
+          value={value.toString()}
+          onChangeText={(text) => {
+            const numValue = parseFloat(text) || 0;
+            updateResponse(question._id, numValue);
+          }}
+          keyboardType="numeric"
+          placeholder="Ingresa un número"
+        />
+      </View>
+    );
+  };
+
   // Función para renderizar pregunta de opción múltiple
   const renderMultipleChoice = (question: FormQuestion) => {
-    const selectedOptions = responses[question.id] || [];
+    const selectedOptions = responses[question._id] || [];
     
     return (
       <View style={styles.questionContainer}>
@@ -273,10 +150,10 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
                   const newSelection = isSelected
                     ? selectedOptions.filter(item => item !== option)
                     : [...selectedOptions, option];
-                  updateResponse(question.id, newSelection);
+                  updateResponse(question._id, newSelection);
                 } else {
                   // Selección única
-                  updateResponse(question.id, option);
+                  updateResponse(question._id, option);
                 }
               }}
             >
@@ -290,32 +167,9 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
     );
   };
 
-  // Función para renderizar pregunta numérica
-  const renderNumericQuestion = (question: FormQuestion) => {
-    const value = responses[question.id] || '';
-    
-    return (
-      <View style={styles.questionContainer}>
-        <Text style={styles.questionText}>{question.enunciado}</Text>
-        {question.requerida && <Text style={styles.requiredText}>* Requerida</Text>}
-        
-        <TextInput
-          style={styles.textInput}
-          value={value.toString()}
-          onChangeText={(text) => {
-            const numValue = parseFloat(text) || 0;
-            updateResponse(question.id, numValue);
-          }}
-          keyboardType="numeric"
-          placeholder="Ingresa un número"
-        />
-      </View>
-    );
-  };
-
   // Función para renderizar pregunta de escala
   const renderScaleQuestion = (question: FormQuestion) => {
-    const value = responses[question.id] || null;
+    const value = responses[question._id] || null;
     const min = question.escalaMin || 1;
     const max = question.escalaMax || 10;
     
@@ -333,7 +187,7 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
               <TouchableOpacity
                 key={scaleValue}
                 style={[styles.scaleButton, isSelected && styles.scaleSelected]}
-                onPress={() => updateResponse(question.id, scaleValue)}
+                onPress={() => updateResponse(question._id, scaleValue)}
               >
                 <Text style={[styles.scaleText, isSelected && styles.scaleSelectedText]}>
                   {scaleValue}
@@ -349,10 +203,12 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
   // Función para renderizar una pregunta según su tipo
   const renderQuestion = (question: FormQuestion) => {
     switch (question.tipo) {
-      case 'opcionMultiple':
-        return renderMultipleChoice(question);
+      case 'texto':
+        return renderTextQuestion(question);
       case 'numero':
         return renderNumericQuestion(question);
+      case 'opcionMultiple':
+        return renderMultipleChoice(question);
       case 'escala':
         return renderScaleQuestion(question);
       default:
@@ -366,64 +222,102 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
     }
   };
 
-  // Función para guardar respuestas
+  // Función para guardar respuestas como borrador
   const saveResponses = async () => {
-    if (!formResponseId) {
-      Alert.alert('Error', 'No hay ID de respuesta disponible');
+    if (!formResponse) {
+      Alert.alert('Error', 'No hay respuesta de formulario disponible');
       return;
     }
 
     try {
-      setSubmitting(true);
-      console.log('💾 FormResponse: Guardando respuestas...');
+      setSaving(true);
+      console.log('💾 FormResponse: Guardando respuestas como borrador...');
       
-      const sessionCookie = await authService.extractSessionCookie();
-      if (!sessionCookie) {
-        throw new Error('No hay cookie de sesión');
-      }
-
       // Convertir respuestas al formato esperado por el API
       const formattedResponses = Object.entries(responses).map(([questionId, answer]) => ({
         questionId,
         answer
       }));
 
-      const body = {
-        responses: formattedResponses
-      };
-
-      console.log('📋 FormResponse: Body para guardar:', body);
-
-      const response = await fetch(`https://e0as.me/form-responses/${formResponseId}`, {
-        method: 'POST',
-        headers: {
-          'Cookie': sessionCookie,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      const responseText = await response.text();
-      console.log('📡 FormResponse: Save response status:', response.status);
-      console.log('📄 FormResponse: Save response:', responseText);
-
-      if (!response.ok) {
-        throw new Error(`Error guardando respuestas: ${response.status} - ${responseText}`);
-      }
-
-      const data = JSON.parse(responseText);
-      console.log('✅ FormResponse: Respuestas guardadas:', data);
+      await formResponseService.saveFormResponses(
+        formResponse.formId,
+        formResponse._id,
+        formattedResponses,
+        'draft'
+      );
       
-      Alert.alert('Éxito', 'Respuestas guardadas correctamente', [
-        { text: 'OK', onPress: onBack }
-      ]);
+      Alert.alert('Éxito', 'Respuestas guardadas como borrador');
       
     } catch (error) {
-      console.log('💥 FormResponse: Error guardando respuestas:', error);
+      console.error('� FormResponse: Error guardando respuestas:', error);
       Alert.alert('Error', 'No se pudieron guardar las respuestas');
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
+  };
+
+  // Función para enviar formulario completado
+  const submitForm = async () => {
+    if (!formResponse) {
+      Alert.alert('Error', 'No hay respuesta de formulario disponible');
+      return;
+    }
+
+    // Verificar preguntas requeridas
+    const requiredQuestions = questions.filter(q => q.requerida);
+    const missingAnswers = requiredQuestions.filter(q => !responses[q._id]);
+    
+    if (missingAnswers.length > 0) {
+      Alert.alert(
+        'Preguntas requeridas', 
+        `Faltan respuestas para ${missingAnswers.length} pregunta(s) requerida(s)`
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Enviar formulario',
+      '¿Estás seguro de que quieres enviar el formulario? Una vez enviado no podrás modificar las respuestas.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Enviar',
+          style: 'default',
+          onPress: async () => {
+            try {
+              setSubmitting(true);
+              console.log('� FormResponse: Enviando formulario...');
+              
+              // Primero guardar las respuestas actuales
+              const formattedResponses = Object.entries(responses).map(([questionId, answer]) => ({
+                questionId,
+                answer
+              }));
+
+              await formResponseService.saveFormResponses(
+                formResponse.formId,
+                formResponse._id,
+                formattedResponses,
+                'draft'
+              );
+              
+              // Luego enviar el formulario
+              await formResponseService.submitForm(formResponse._id);
+              
+              Alert.alert('Éxito', 'Formulario enviado correctamente', [
+                { text: 'OK', onPress: onBack }
+              ]);
+              
+            } catch (error) {
+              console.error('💥 FormResponse: Error enviando formulario:', error);
+              Alert.alert('Error', 'No se pudo enviar el formulario');
+            } finally {
+              setSubmitting(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (loading) {
@@ -465,7 +359,7 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {questions.map((question, index) => (
-          <View key={question.id} style={styles.questionWrapper}>
+          <View key={question._id} style={styles.questionWrapper}>
             <Text style={styles.questionNumber}>Pregunta {index + 1}</Text>
             {renderQuestion(question)}
           </View>
@@ -473,17 +367,31 @@ const FormResponseScreen: React.FC<FormResponseScreenProps> = ({
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.saveButton, submitting && styles.saveButtonDisabled]} 
-          onPress={saveResponses}
-          disabled={submitting}
-        >
-          {submitting ? (
-            <ActivityIndicator color="white" />
-          ) : (
-            <Text style={styles.saveButtonText}>Guardar Respuestas</Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={[styles.draftButton, saving && styles.buttonDisabled]} 
+            onPress={saveResponses}
+            disabled={saving || submitting}
+          >
+            {saving ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Text style={styles.draftButtonText}>Guardar Borrador</Text>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.submitButton, submitting && styles.buttonDisabled]} 
+            onPress={submitForm}
+            disabled={submitting || saving}
+          >
+            {submitting ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Text style={styles.submitButtonText}>Enviar Formulario</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -605,6 +513,38 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  draftButton: {
+    backgroundColor: '#FF9800',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+  },
+  submitButton: {
+    backgroundColor: '#4CAF50',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 1,
+  },
+  buttonDisabled: {
+    backgroundColor: '#cccccc',
+  },
+  draftButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   saveButton: {
     backgroundColor: '#4CAF50',
