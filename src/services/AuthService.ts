@@ -93,6 +93,7 @@ class AuthService {
           console.log('🍪 AuthService: Extrayendo cookies del dominio:', domain);
           const cookies = await CookieManager.get(domain);
           console.log('🍪 AuthService: Cookies encontradas:', Object.keys(cookies));
+          console.log('🍪 AuthService: Valores de cookies:', JSON.stringify(cookies, null, 2));
           
           // Buscar cookie por varios nombres posibles (el backend usa __Host-sid)
           const possibleNames = ['__Host-sid', SESSION_COOKIE_NAME, 'session', 'sessionId', 'auth_token', 'connect.sid'];

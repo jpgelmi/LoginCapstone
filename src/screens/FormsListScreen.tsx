@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import authService from '../services/AuthService';
-import FormQuestionsScreen from './FormQuestionsScreen';
+import FormResponseScreen from './FormResponseScreen';
 
 interface Form {
   _id: string;
@@ -160,14 +160,13 @@ const FormsListScreen: React.FC<FormsListScreenProps> = ({ onBack }) => {
   };
 
   const handleFormPress = (form: Form) => {
-    console.log('📝 FormsListScreen: Usuario tocó formulario:', form.title);
+    console.log('📝 FormsListScreen: Formulario seleccionado:', form.title);
     console.log('📝 FormsListScreen: Form ID:', form._id);
-    console.log('📝 FormsListScreen: Form Type:', form.formType);
-    console.log('📝 FormsListScreen: Navegando a preguntas del formulario...');
+    console.log('📝 FormsListScreen: Form status:', form.status);
+    console.log('📝 FormsListScreen: Form type:', form.formType);
+    console.log('📝 FormsListScreen: Form completo:', JSON.stringify(form, null, 2));
     setSelectedForm(form);
-  };
-
-  const handleBackFromQuestions = () => {
+  };  const handleBackFromQuestions = () => {
     console.log('📝 FormsListScreen: Usuario regresó de preguntas del formulario');
     setSelectedForm(null);
   };
@@ -227,10 +226,10 @@ const FormsListScreen: React.FC<FormsListScreenProps> = ({ onBack }) => {
     </View>
   );
 
-  // Si se seleccionó un formulario, mostrar la pantalla de preguntas
+  // Si se seleccionó un formulario, mostrar el formulario de respuestas
   if (selectedForm) {
     return (
-      <FormQuestionsScreen
+      <FormResponseScreen
         formId={selectedForm._id}
         formTitle={selectedForm.title}
         onBack={handleBackFromQuestions}
