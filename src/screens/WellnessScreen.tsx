@@ -75,10 +75,8 @@ const WellnessScreen: React.FC<WellnessScreenProps> = ({ onBack }) => {
     icon: string;
     isReversed?: boolean; // Para dolor muscular, fatiga y estrés (donde menos es mejor)
   }> = ({ title, value, onValueChange, icon, isReversed = false }) => {
-    // Para sliders invertidos, calculamos el valor para mostrar (0 = bueno, 10 = malo)
-    const displayValue = isReversed ? 10 - value : value;
-    const color = getColorForValue(displayValue);
-    const description = getDescriptionForValue(displayValue);
+    // Siempre mostrar el valor directo del slider (0-10)
+    const color = getColorForValue(value);
 
     return (
       <View style={styles.sliderContainer}>
@@ -87,32 +85,36 @@ const WellnessScreen: React.FC<WellnessScreenProps> = ({ onBack }) => {
           <View style={styles.sliderTitleContainer}>
             <Text style={styles.sliderTitle}>{title}</Text>
             <Text style={[styles.sliderValue, { color }]}>
-              {Math.round(value)} - {description}
+              {Math.round(value)}
             </Text>
           </View>
         </View>
         
-        <View style={styles.sliderWrapper}>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={10}
-            step={0.5}
-            value={value}
-            onValueChange={onValueChange}
-            minimumTrackTintColor={color}
-            maximumTrackTintColor="#e5e7eb"
-            thumbTintColor={color}
-          />
+        <View style={styles.buttonControlsContainer}>
+          <TouchableOpacity 
+            style={[styles.controlButton, value <= 0 && styles.controlButtonDisabled]}
+            onPress={() => onValueChange(Math.max(0, value - 1))}
+            disabled={value <= 0}
+          >
+            <Text style={[styles.controlButtonText, value <= 0 && styles.controlButtonTextDisabled]}>−</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.valueDisplay}>
+            <Text style={[styles.valueText, { color }]}>{Math.round(value)}</Text>
+          </View>
+          
+          <TouchableOpacity 
+            style={[styles.controlButton, value >= 10 && styles.controlButtonDisabled]}
+            onPress={() => onValueChange(Math.min(10, value + 1))}
+            disabled={value >= 10}
+          >
+            <Text style={[styles.controlButtonText, value >= 10 && styles.controlButtonTextDisabled]}>+</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.sliderLabels}>
-          <Text style={styles.sliderLabel}>
-            {isReversed ? '10 - Ninguno' : '0 - Muy Malo'}
-          </Text>
-          <Text style={styles.sliderLabel}>
-            {isReversed ? '0 - Extremo' : '10 - Excelente'}
-          </Text>
+          <Text style={styles.sliderLabel}>0</Text>
+          <Text style={styles.sliderLabel}>10</Text>
         </View>
       </View>
     );
@@ -408,12 +410,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   sliderWrapper: {
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     marginBottom: 12,
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 60,
   },
   sliderLabels: {
     flexDirection: 'row',
@@ -424,6 +427,57 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     fontWeight: '500',
+  },
+
+  // Controles de botones +/-
+  buttonControlsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  controlButton: {
+    backgroundColor: '#3b82f6',
+    borderRadius: 12,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  controlButtonDisabled: {
+    backgroundColor: '#d1d5db',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  controlButtonText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  controlButtonTextDisabled: {
+    color: '#9ca3af',
+  },
+  valueDisplay: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    minWidth: 80,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+  },
+  valueText: {
+    fontSize: 24,
+    fontWeight: '700',
   },
 
   // Botón de envío

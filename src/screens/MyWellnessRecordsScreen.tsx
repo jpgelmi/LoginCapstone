@@ -200,13 +200,6 @@ const MyWellnessRecordsScreen: React.FC<MyWellnessRecordsScreenProps> = ({
           </View>
         </View>
       </View>
-      
-      {record.fecha && (
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateLabel}>📅 Fecha:</Text>
-          <Text style={styles.dateText}>{formatDate(record.fecha)}</Text>
-        </View>
-      )}
     </View>
   );
 
